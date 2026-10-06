@@ -3,6 +3,10 @@
   desc: Provides UTF-8 support to Lua.
   members:
 
+  - name: charpattern
+    type: string
+    desc: The pattern which matches exactly one UTF-8 byte sequence, assuming that the subject is a valid UTF-8 string.
+
 #*****************************************************************************************************
   - name: fold
     type: function
@@ -11,6 +15,10 @@
     - name: s
       type: string
       desc: The string to be transformed.
+    return:
+    - name: folded_string
+      type: string
+      desc: The case-folded string.
     examples:
     - desc: |-
             ```lua
@@ -26,10 +34,12 @@
       type: string
       desc: The string to get byte values from.
     - name: i
-      type: number
-      desc: The starting position.
+      type: integer
+      optional: true
+      desc: The starting position, default is 1.
     - name: j
-      type: number
+      type: integer
+      optional: true
       desc: The ending position, default is the value of `i`.
     return:
     - name: bytes
@@ -67,6 +77,10 @@
       - name: s
         type: string
         desc: The string to be escaped, containing escape sequences to be converted to their UTF-8 representation.
+    return:
+      - name: escaped_string
+        type: string
+        desc: The string with escape sequences converted to UTF-8.
     examples:
       - desc: |-
               ```lua
@@ -95,11 +109,16 @@
       type: string
       desc: The original string.
     - name: pos
-      type: number
-      desc: The position at which to insert.
+      type: integer|string
+      desc: The character position at which to insert. May be omitted, then the string to insert goes here and is appended to the end.
     - name: substring
       type: string
+      optional: true
       desc: The string to insert.
+    return:
+    - name: result_string
+      type: string
+      desc: The string with the substring inserted.
     examples:
     - desc: |-
             ```lua
@@ -115,11 +134,16 @@
       type: string
       desc: The original string.
     - name: start
-      type: number
-      desc: The starting position for the removal.
+      type: integer
+      desc: The starting character position for the removal.
     - name: end
-      type: number
-      desc: The ending position for the removal.
+      type: integer
+      optional: true
+      desc: The ending character position for the removal, default is -1.
+    return:
+    - name: result_string
+      type: string
+      desc: The string with the characters removed.
     examples:
     - desc: |-
             ```lua
@@ -134,9 +158,21 @@
     - name: s
       type: string
       desc: The string to be searched.
-    - name: n
-      type: number
-      desc: The character index.
+    - name: charpos
+      type: integer
+      optional: true
+      desc: The byte position to start from, or the character index when offset is omitted.
+    - name: offset
+      type: integer
+      optional: true
+      desc: The character offset from charpos.
+    return:
+    - name: charpos
+      type: integer|nil
+      desc: The byte position of the character, nil if it is out of the string.
+    - name: code
+      type: integer|nil
+      desc: The code point of the character.
     examples:
     - desc: |-
             ```lua
@@ -151,9 +187,21 @@
     - name: s
       type: string
       desc: The string to be processed.
-    - name: position
-      type: number
-      desc: The current position in the string.
+    - name: charpos
+      type: integer
+      optional: true
+      desc: The current byte position in the string.
+    - name: offset
+      type: integer
+      optional: true
+      desc: The character offset, default is 1 when charpos is given.
+    return:
+    - name: charpos
+      type: integer|nil
+      desc: The byte position of the next character, nil at the end of the string.
+    - name: code
+      type: integer|nil
+      desc: The code point of the next character.
     examples:
     - desc: |-
             ```lua
@@ -167,8 +215,20 @@
     desc: Returns the width of a UTF-8 string, considering fullwidth and halfwidth characters.
     parameters:
     - name: s
-      type: string
-      desc: The string to measure.
+      type: string|integer
+      desc: The string or a single code point to measure.
+    - name: ambi_is_double
+      type: boolean
+      optional: true
+      desc: Treat ambiguous-width characters as double width.
+    - name: default_width
+      type: integer
+      optional: true
+      desc: The width of characters with unknown width, default is 0.
+    return:
+    - name: width
+      type: integer
+      desc: The width in terminal cells.
     examples:
     - desc: |-
             ```lua
@@ -184,8 +244,26 @@
       type: string
       desc: The string to measure.
     - name: width
-      type: number
+      type: integer
       desc: The visual width to check.
+    - name: ambi_is_double
+      type: boolean
+      optional: true
+      desc: Treat ambiguous-width characters as double width.
+    - name: default_width
+      type: integer
+      optional: true
+      desc: The width of characters with unknown width, default is 0.
+    return:
+    - name: index
+      type: integer
+      desc: The character index at which the width is reached, or the length plus one.
+    - name: offset
+      type: integer|nil
+      desc: The width remaining inside that character.
+    - name: char_width
+      type: integer|nil
+      desc: The width of that character.
     examples:
     - desc: |-
             ```lua
@@ -203,6 +281,10 @@
     - name: s2
       type: string
       desc: The second string to compare.
+    return:
+    - name: result
+      type: integer
+      desc: -1, 0 or 1 when s1 is less, equal or greater than s2 ignoring case.
     examples:
     - desc: |-
             ```lua
@@ -221,17 +303,19 @@
       type: string
       desc: The pattern to search for.
     - name: init
-      type: number
+      type: integer
+      optional: true
       desc: The starting position in the string.
     - name: plain
       type: boolean
+      optional: true
       desc: If true, the function does a plain search.
     return:
       - name: start
-        type: integer
-        desc: The start position of the first occurrence of the pattern.
+        type: integer|nil
+        desc: The start position of the first occurrence of the pattern, nil if there is none.
       - name: end
-        type: integer
+        type: integer|nil
         desc: The end position of the first occurrence of the pattern.
     examples:
     - desc: |-
@@ -280,7 +364,8 @@
       type: string or table or function
       desc: The replacement string or a function/table to generate the replacement.
     - name: n
-      type: number
+      type: integer
+      optional: true
       desc: The maximum number of replacements.
     return:
       - name: result_string
@@ -308,7 +393,8 @@
       type: string
       desc: The pattern to match.
     - name: init
-      type: number
+      type: integer
+      optional: true
       desc: The starting position in the string.
     return:
     - name: captured_values
@@ -330,11 +416,15 @@
       type: string
       desc: The string to search.
     - name: n
-      type: number
+      type: integer
       desc: The character index.
+    - name: i
+      type: integer
+      optional: true
+      desc: The byte position to count from, default is 1 for non-negative n and the end of the string otherwise.
     return:
       - name: offset
-        type: number
+        type: integer|nil
         desc: The byte position of the character at the given index, or nil if the index is out of range.
     examples:
     - desc: |-
@@ -350,6 +440,10 @@
     - name: s
       type: string
       desc: The string to iterate through.
+    - name: lax
+      type: boolean
+      optional: true
+      desc: Do not raise an error on invalid UTF-8.
     return:
       - name: iterator
         type: function
@@ -376,9 +470,21 @@
     - name: s
       type: string
       desc: The string from which to extract code points.
+    - name: i
+      type: integer
+      optional: true
+      desc: The starting position, default is 1.
+    - name: j
+      type: integer
+      optional: true
+      desc: The ending position, default is the value of `i`.
+    - name: lax
+      type: boolean
+      optional: true
+      desc: Do not raise an error on invalid UTF-8.
     return:
       - name: codepoint
-        type: number
+        type: integer...
         desc: The Unicode code point(s) of the character(s) at the given position(s).
     examples:
       - desc: |-
@@ -394,10 +500,22 @@
     - name: s
       type: string
       desc: The string to get the length of.
+    - name: i
+      type: integer
+      optional: true
+      desc: The starting byte position, default is 1.
+    - name: j
+      type: integer
+      optional: true
+      desc: The ending byte position, default is -1.
+    - name: lax
+      type: boolean
+      optional: true
+      desc: Do not check the string for invalid UTF-8.
     return:
       - name: length
-        type: integer
-        desc: The number of UTF-8 characters in the string.
+        type: integer|nil
+        desc: The number of UTF-8 characters in the string, nil if the string is not valid UTF-8.
       - name: position_of_first_invalid_byte
         type: integer
         desc: The position of the first invalid byte in the string, if the string is not valid UTF-8.
@@ -415,6 +533,13 @@
     - name: s
       type: string
       desc: The string from which to extract a substring.
+    - name: i
+      type: integer
+      desc: The starting character position.
+    - name: j
+      type: integer
+      optional: true
+      desc: The ending character position, default is -1.
     return:
     - name: substring
       type: string
@@ -433,6 +558,10 @@
     - name: s
       type: string
       desc: The string to be reversed.
+    - name: lax
+      type: boolean
+      optional: true
+      desc: Do not raise an error on invalid UTF-8.
     return:
     - name: reversed_string
       type: string
@@ -487,6 +616,10 @@
       - name: s
         type: string
         desc: The string to be converted to uppercase.
+    return:
+      - name: title_string
+        type: string
+        desc: The converted string.
     examples:
       - desc: |-
               ```lua
